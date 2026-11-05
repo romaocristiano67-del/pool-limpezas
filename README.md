@@ -23,8 +23,8 @@ O Vercel hospeda apenas o site estático. Migrações e funções de email conti
 
 1. No Supabase, ative Google em **Authentication > Sign In / Providers** e configure as credenciais OAuth.
 2. Em **Authentication > URL Configuration**, adicione como redirect permitido o URL local indicado pelo Vite e o URL de produção do site. Configure também a URL de callback OAuth do Supabase na consola Google.
-3. Ligue a CLI ao projecto e aplique a migração: `npx supabase login`, `npx supabase link --project-ref <project-ref>` e `npx supabase db push`.
-4. As migrações criam `profiles`, `pools` e `service_requests`, RLS por utilizador e o perfil automático após registo por email ou Google. A migração `20261105010000_fix_profile_trigger.sql` corrige e atualiza perfis existentes. Os utilizadores podem entrar ou criar conta por email e palavra-passe ou Google; confirme o email quando a confirmação estiver ativa no Supabase.
+3. Ligue a CLI ao projecto e aplique as migrações em ordem: `npx supabase login`, `npx supabase link --project-ref <project-ref>` e `npx supabase db push`. A migração `20261105000000_initial.sql` cria as tabelas; `20261105010000_fix_profile_trigger.sql` depende de `public.profiles` e não deve ser executada sozinha.
+4. Se usar o SQL Editor do Supabase em vez da CLI, execute primeiro o conteúdo completo de `20261105000000_initial.sql` e, só depois, o conteúdo completo de `20261105010000_fix_profile_trigger.sql`. As migrações criam `profiles`, `pools` e `service_requests`, RLS por utilizador e o perfil automático após registo por email ou Google; a corretiva atualiza perfis existentes. Os utilizadores podem entrar ou criar conta por email e palavra-passe ou Google; confirme o email quando a confirmação estiver ativa no Supabase.
 
 ## Emails
 

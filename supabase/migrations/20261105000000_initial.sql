@@ -1,4 +1,4 @@
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   email text not null,
   full_name text not null default '',
@@ -13,7 +13,7 @@ create table public.profiles (
   )
 );
 
-create table public.pools (
+create table if not exists public.pools (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade default auth.uid(),
   label text not null,
@@ -23,7 +23,7 @@ create table public.pools (
   updated_at timestamptz not null default now()
 );
 
-create table public.service_requests (
+create table if not exists public.service_requests (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade default auth.uid(),
   pool_id uuid references public.pools (id) on delete set null,
@@ -39,33 +39,38 @@ create table public.service_requests (
   )
 );
 
-create index pools_user_id_idx on public.pools (user_id);
-create index service_requests_user_created_idx on public.service_requests (user_id, created_at desc);
-create index service_requests_visit_reminder_idx on public.service_requests (visit_date)
+create index if not exists pools_user_id_idx on public.pools (user_id);
+create index if not exists service_requests_user_created_idx on public.service_requests (user_id, created_at desc);
+create index if not exists service_requests_visit_reminder_idx on public.service_requests (visit_date)
   where visit_date is not null and reminder_sent_at is null;
 
 alter table public.profiles enable row level security;
 alter table public.pools enable row level security;
 alter table public.service_requests enable row level security;
 
+drop policy if exists "Users can read their profile" on public.profiles;
 create policy "Users can read their profile"
   on public.profiles for select to authenticated
   using ((select auth.uid()) = id);
 
+drop policy if exists "Users can update their profile" on public.profiles;
 create policy "Users can update their profile"
   on public.profiles for update to authenticated
   using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
 
+drop policy if exists "Users can manage their pools" on public.pools;
 create policy "Users can manage their pools"
   on public.pools for all to authenticated
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can read their service history" on public.service_requests;
 create policy "Users can read their service history"
   on public.service_requests for select to authenticated
   using ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can create their service requests" on public.service_requests;
 create policy "Users can create their service requests"
   on public.service_requests for insert to authenticated
   with check ((select auth.uid()) = user_id);
@@ -85,6 +90,7 @@ begin
 end;
 $$;
 
+drop trigger if exists service_requests_check_pool_owner on public.service_requests;
 create trigger service_requests_check_pool_owner
   before insert or update of pool_id, user_id on public.service_requests
   for each row execute procedure public.check_service_pool_owner();
@@ -116,6 +122,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
@@ -131,10 +138,12 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists pools_set_updated_at on public.pools;
 create trigger pools_set_updated_at
   before update on public.pools
   for each row execute procedure public.set_updated_at();

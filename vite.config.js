@@ -13,7 +13,7 @@ function readSupabaseConfig() {
       return [line.slice(0, separator).trim().toLowerCase(), line.slice(separator + 1).trim()];
     }),
   );
-  const url = values["api ur"];
+  const url = values["api ur"]?.replace(/\/rest\/v1\/?$/i, "").replace(/\/$/, "");
   const publishableKey = values["chave publica"];
 
   if (!url || !publishableKey) {

@@ -154,11 +154,30 @@ window.cm = function closeAuth() {
 window.PCC = {
   async signInProvider(provider) {
     showError("");
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.href },
+      options: { redirectTo: window.location.href, skipBrowserRedirect: true },
     });
-    if (error) showError(`Não foi possível continuar com ${provider === "google" ? "Google" : "Apple"}. Confirme se o provedor está ativo no Supabase.`);
+    if (error || !data?.url) {
+      showError(`Não foi possível iniciar ${provider === "google" ? "Google" : "Apple"}. Confirme se o provedor está ativo no Supabase.`);
+      return;
+    }
+
+    try {
+      const response = await fetch(data.url, { redirect: "manual" });
+      if (response.type === "opaqueredirect" || response.ok || (response.status >= 300 && response.status < 400)) {
+        window.location.assign(data.url);
+        return;
+      }
+      const result = await response.json().catch(() => null);
+      if (result?.error_code === "validation_failed" && /provider is not enabled/i.test(result.msg || "")) {
+        showError(`${provider === "google" ? "Google" : "Apple"} ainda não está configurado no serviço. Tente entrar com email ou contacte o administrador.`);
+        return;
+      }
+      showError(`Não foi possível iniciar ${provider === "google" ? "Google" : "Apple"}. Tente novamente ou use email e palavra-passe.`);
+    } catch {
+      window.location.assign(data.url);
+    }
   },
 
   async submitEmailAuth(event, mode) {

@@ -5,9 +5,19 @@ Site em Vite com autenticação Google e dados persistidos no Supabase.
 ## Desenvolvimento
 
 1. Instale Node.js 20.19+ ou 22.12+.
-2. Mantenha no `env.local` as linhas `api ur = ...` e `chave publica = ...`. A chave publicável é usada no browser; `chave secreta` nunca é carregada pela aplicação cliente.
+2. Para desenvolvimento local, o `env.local` legado continua aceite. Também pode usar as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` num ficheiro `.env.local`. Só a chave publicável/anon é usada no browser; a chave secreta nunca é carregada pela aplicação cliente.
 3. Execute `npm install` e `npm run dev`.
 4. Abra a página indicada pelo Vite. O ficheiro `env.local` é ignorado pelo Git.
+
+## Deploy no Vercel
+
+1. Importe `https://github.com/romaocristiano67-del/pool-limpezas` no Vercel e selecione a branch `main`.
+2. O `vercel.json` define Vite, `npm run build` e `dist`; o build publica a página como `index.html`.
+3. Em **Project Settings > Environment Variables**, crie `VITE_SUPABASE_URL` com a URL raiz do projecto (por exemplo, `https://<project-ref>.supabase.co`) e `VITE_SUPABASE_PUBLISHABLE_KEY` com a chave publicável. A chave `SUPABASE_SERVICE_ROLE_KEY` ou qualquer chave secreta não deve ter prefixo `VITE_` nem ser adicionada ao frontend.
+4. Faça redeploy depois de guardar as variáveis. A configuração também aceita `VITE_SUPABASE_ANON_KEY` se o projecto ainda usar a chave anon legada.
+5. Em Supabase **Authentication > URL Configuration**, defina o domínio de produção Vercel como Site URL e inclua-o em Redirect URLs. Adicione domínios de Preview apenas se forem necessários para testar OAuth.
+
+O Vercel hospeda apenas o site estático. Migrações e funções de email continuam no Supabase e devem ser publicadas/configuradas conforme as secções abaixo.
 
 ## Base de dados e Google
 

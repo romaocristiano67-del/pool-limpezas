@@ -5,7 +5,7 @@ Site em Vite com autenticação Google e dados persistidos no Supabase.
 ## Desenvolvimento
 
 1. Instale Node.js 20.19+ ou 22.12+.
-2. Para desenvolvimento local, o `env.local` legado continua aceite. Também pode usar as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` num ficheiro `.env.local`. Só a chave publicável/anon é usada no browser; a chave secreta nunca é carregada pela aplicação cliente.
+2. O `env.local` contém as mesmas duas variáveis públicas que deve cadastrar no Vercel: `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Copie cada nome e valor para **Project Settings > Environment Variables**. A chave publicável/anon pode ficar no browser; a chave secreta não deve estar neste ficheiro nem ser prefixada com `VITE_`.
 3. Execute `npm install` e `npm run dev`.
 4. Abra a página indicada pelo Vite. O ficheiro `env.local` é ignorado pelo Git.
 
@@ -13,7 +13,7 @@ Site em Vite com autenticação Google e dados persistidos no Supabase.
 
 1. Importe `https://github.com/romaocristiano67-del/pool-limpezas` no Vercel e selecione a branch `main`.
 2. O `vercel.json` define Vite, `npm run build` e `dist`; o build publica a página como `index.html`.
-3. Em **Project Settings > Environment Variables**, crie `VITE_SUPABASE_URL` com a URL raiz do projecto (por exemplo, `https://<project-ref>.supabase.co`) e `VITE_SUPABASE_PUBLISHABLE_KEY` com a chave publicável. A chave `SUPABASE_SERVICE_ROLE_KEY` ou qualquer chave secreta não deve ter prefixo `VITE_` nem ser adicionada ao frontend.
+3. Em **Project Settings > Environment Variables**, copie as duas variáveis públicas do `env.local`. Cadastre `VITE_SUPABASE_URL` com a URL raiz do projecto e `VITE_SUPABASE_PUBLISHABLE_KEY` com a chave publicável. Nunca cadastre a chave secreta como variável `VITE_` nem a inclua no frontend.
 4. Faça redeploy depois de guardar as variáveis. A configuração também aceita `VITE_SUPABASE_ANON_KEY` se o projecto ainda usar a chave anon legada.
 5. Em Supabase **Authentication > URL Configuration**, defina o domínio de produção Vercel como Site URL e inclua-o em Redirect URLs. Adicione domínios de Preview apenas se forem necessários para testar OAuth.
 

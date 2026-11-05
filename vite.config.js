@@ -21,9 +21,10 @@ function readLegacyEnv() {
 function readSupabaseConfig(mode) {
   const env = loadEnv(mode, root, "");
   const legacy = readLegacyEnv();
-  const rawUrl = env.VITE_SUPABASE_URL || legacy["api ur"];
+  const rawUrl = env.VITE_SUPABASE_URL || legacy.vite_supabase_url || legacy["api ur"];
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY
     || env.VITE_SUPABASE_ANON_KEY
+    || legacy.vite_supabase_publishable_key
     || legacy["chave publica"];
 
   if (!rawUrl || !publishableKey) {

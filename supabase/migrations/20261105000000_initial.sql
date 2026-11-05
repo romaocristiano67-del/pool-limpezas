@@ -101,7 +101,7 @@ language plpgsql
 security definer set search_path = ''
 as $$
 begin
-  insert into public.profiles (id, email, full_name)
+  insert into public.profiles (id, email, full_name, phone)
   values (
     new.id,
     coalesce(new.email, ''),

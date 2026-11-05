@@ -40,7 +40,7 @@ function renderModal(mode = "signin") {
   const action = mode === "signup" ? "Criar conta" : "Entrar";
   const passwordHint = mode === "signup" ? '<small>Use pelo menos 8 caracteres.</small>' : "";
 
-  document.getElementById("mf").innerHTML = `<p class="q" id="auth-title">${title}</p><div class="social-auth"><button class="btn d" type="button" onclick="PCC.signInProvider('google')">Continuar com Google</button><button class="btn d" type="button" onclick="PCC.signInProvider('apple')">Continuar com Apple</button></div><div class="auth-divider"><span>ou use o email</span></div><form onsubmit="return PCC.submitEmailAuth(event, '${mode}')">${nameField}<label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required maxlength="254" placeholder="nome@exemplo.com"><label for="auth-password">Palavra-passe</label><input id="auth-password" type="password" autocomplete="${mode === "signup" ? "new-password" : "current-password"}" minlength="8" required placeholder="Mínimo 8 caracteres">${passwordHint}<p class="er" id="auth-error" role="status" aria-live="polite"></p><button class="btn d" type="submit">${action}</button></form><p class="account-note">Ao criar conta, poderá guardar piscinas, moradas e histórico de serviços.</p>`;
+  document.getElementById("mf").innerHTML = `<p class="q" id="auth-title">${title}</p><div class="social-auth"><button class="btn d" type="button" onclick="PCC.signInGoogle()">Continuar com Google</button></div><div class="auth-divider"><span>ou use o email</span></div><form onsubmit="return PCC.submitEmailAuth(event, '${mode}')">${nameField}<label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required maxlength="254" placeholder="nome@exemplo.com"><label for="auth-password">Palavra-passe</label><input id="auth-password" type="password" autocomplete="${mode === "signup" ? "new-password" : "current-password"}" minlength="8" required placeholder="Mínimo 8 caracteres">${passwordHint}<p class="er" id="auth-error" role="status" aria-live="polite"></p><button class="btn d" type="submit">${action}</button></form><p class="account-note">Ao criar conta, poderá guardar piscinas, moradas e histórico de serviços.</p>`;
   document.querySelector("#md [role=dialog]").setAttribute("aria-labelledby", "auth-title");
 }
 
@@ -56,8 +56,8 @@ function renderAuth() {
   }
 
   const firstName = (profile?.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || "Conta").split(" ")[0];
-  window.U = { n: firstName, t: profile?.phone || "" };
-  auth.innerHTML = `<span class="hi" title="${escapeHtml(currentUser.email)}">${escapeHtml(firstName)}</span><button class="lnk2" onclick="PCC.signOut()">Sair</button>`;
+  window.U = { n: profile?.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || firstName, t: profile?.phone || "" };
+  auth.innerHTML = `<a class="lnk2 account-shortcut" href="#conta">Minha conta</a><span class="hi" title="${escapeHtml(currentUser.email)}">${escapeHtml(firstName)}</span><button class="lnk2" onclick="PCC.signOut()">Sair</button>`;
 }
 
 async function loadAccount() {
@@ -77,6 +77,8 @@ async function loadAccount() {
   pools = poolsResult.data || [];
   window.U = { n: profile?.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "", t: profile?.phone || "" };
   document.getElementById("account-email").textContent = currentUser.email || "";
+  document.getElementById("profile-name").value = profile?.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "";
+  document.getElementById("profile-phone").value = profile?.phone || "";
   const marketing = document.getElementById("marketing-opt-in");
   marketing.checked = Boolean(profile?.marketing_opt_in);
   renderPools();
@@ -91,7 +93,7 @@ function renderPools() {
     list.innerHTML = '<p class="account-note">Ainda não guardou nenhuma piscina.</p>';
     return;
   }
-  list.innerHTML = pools.map((pool) => `<div class="pool-row"><div><strong>${escapeHtml(pool.label)}</strong><p>${escapeHtml(pool.address)}${pool.pool_type ? ` · ${escapeHtml(pool.pool_type)}` : ""}</p></div><button type="button" aria-label="Remover ${escapeHtml(pool.label)}" onclick="PCC.removePool('${pool.id}')">Remover</button></div>`).join("");
+  list.innerHTML = pools.map((pool) => `<div class="pool-row"><div><strong>${escapeHtml(pool.label)}</strong><p>${escapeHtml(pool.address)}${pool.pool_type ? ` · ${escapeHtml(pool.pool_type)}` : ""}</p></div><div class="pool-actions"><button type="button" aria-label="Editar ${escapeHtml(pool.label)}" onclick="PCC.editPool('${pool.id}')">Editar</button><button type="button" aria-label="Remover ${escapeHtml(pool.label)}" onclick="PCC.removePool('${pool.id}')">Remover</button></div></div>`).join("");
 }
 
 function renderHistory(requests) {
@@ -111,7 +113,7 @@ function renderHistory(requests) {
 function renderPoolPicker() {
   const picker = document.getElementById("saved-pool-picker");
   if (!picker || !currentUser) return;
-  const signature = `${currentUser.id}:${pools.map((pool) => pool.id).join(",")}`;
+  const signature = `${currentUser.id}:${pools.map((pool) => `${pool.id}:${pool.label}:${pool.address}`).join(",")}`;
   if (picker.dataset.signature === signature) return;
   picker.dataset.signature = signature;
   if (!pools.length) {
@@ -152,14 +154,14 @@ window.cm = function closeAuth() {
 };
 
 window.PCC = {
-  async signInProvider(provider) {
+  async signInGoogle() {
     showError("");
     const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: "google",
       options: { redirectTo: window.location.href, skipBrowserRedirect: true },
     });
     if (error || !data?.url) {
-      showError(`Não foi possível iniciar ${provider === "google" ? "Google" : "Apple"}. Confirme se o provedor está ativo no Supabase.`);
+      showError("Não foi possível iniciar Google. Confirme se o provedor está ativo no Supabase.");
       return;
     }
 
@@ -171,10 +173,10 @@ window.PCC = {
       }
       const result = await response.json().catch(() => null);
       if (result?.error_code === "validation_failed" && /provider is not enabled/i.test(result.msg || "")) {
-        showError(`${provider === "google" ? "Google" : "Apple"} ainda não está configurado no serviço. Tente entrar com email ou contacte o administrador.`);
+        showError("Google ainda não está configurado no serviço. Tente entrar com email ou contacte o administrador.");
         return;
       }
-      showError(`Não foi possível iniciar ${provider === "google" ? "Google" : "Apple"}. Tente novamente ou use email e palavra-passe.`);
+      showError("Não foi possível iniciar Google. Tente novamente ou use email e palavra-passe.");
     } catch {
       window.location.assign(data.url);
     }
@@ -214,6 +216,30 @@ window.PCC = {
     if (error) window.alert("Não foi possível terminar a sessão.");
   },
 
+  async saveProfile(event) {
+    event.preventDefault();
+    const feedback = document.getElementById("profile-feedback");
+    feedback.textContent = "A guardar…";
+    const fullName = document.getElementById("profile-name").value.trim();
+    const phone = document.getElementById("profile-phone").value.trim();
+    const { error } = await supabase.from("profiles").update({
+      full_name: fullName,
+      phone: phone || null,
+    }).eq("id", currentUser.id);
+
+    if (error) {
+      feedback.textContent = "Não foi possível guardar os dados. Tente novamente.";
+      return false;
+    }
+
+    profile.full_name = fullName;
+    profile.phone = phone || null;
+    window.U = { n: fullName, t: phone };
+    renderAuth();
+    feedback.textContent = "Dados guardados.";
+    return false;
+  },
+
   async updateMarketing(accepted) {
     if (!currentUser || !profile) return;
     const { error } = await supabase.from("profiles").update({
@@ -231,18 +257,48 @@ window.PCC = {
 
   async addPool(event) {
     event.preventDefault();
-    const { error } = await supabase.from("pools").insert({
+    const poolId = document.getElementById("pool-id").value;
+    const values = {
       label: document.getElementById("pool-label").value.trim(),
       address: document.getElementById("pool-address").value.trim(),
       pool_type: document.getElementById("pool-type").value || null,
-    });
+    };
+    const query = poolId
+      ? supabase.from("pools").update(values).eq("id", poolId)
+      : supabase.from("pools").insert(values);
+    const { error } = await query;
     if (error) {
-      window.alert("Não foi possível guardar a piscina.");
+      document.getElementById("pool-feedback").textContent = "Não foi possível guardar a piscina. Tente novamente.";
       return false;
     }
     event.target.reset();
+    document.getElementById("pool-id").value = "";
+    document.getElementById("pool-submit").textContent = "Guardar piscina";
+    document.getElementById("pool-cancel").hidden = true;
+    document.getElementById("pool-feedback").textContent = poolId ? "Piscina atualizada." : "Piscina guardada.";
     await loadAccount();
     return false;
+  },
+
+  editPool(id) {
+    const pool = pools.find((item) => item.id === id);
+    if (!pool) return;
+    document.getElementById("pool-id").value = pool.id;
+    document.getElementById("pool-label").value = pool.label;
+    document.getElementById("pool-address").value = pool.address;
+    document.getElementById("pool-type").value = pool.pool_type || "";
+    document.getElementById("pool-submit").textContent = "Atualizar piscina";
+    document.getElementById("pool-cancel").hidden = false;
+    document.getElementById("pool-feedback").textContent = "A editar piscina.";
+    document.getElementById("pool-form").scrollIntoView({ behavior: "smooth", block: "center" });
+  },
+
+  cancelPoolEdit() {
+    document.getElementById("pool-form").reset();
+    document.getElementById("pool-id").value = "";
+    document.getElementById("pool-submit").textContent = "Guardar piscina";
+    document.getElementById("pool-cancel").hidden = true;
+    document.getElementById("pool-feedback").textContent = "";
   },
 
   async removePool(id) {

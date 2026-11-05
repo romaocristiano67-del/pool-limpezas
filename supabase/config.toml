@@ -1,0 +1,5 @@
+[functions.send-visit-reminders]
+verify_jwt = false
+
+[functions.send-promotion]
+verify_jwt = false

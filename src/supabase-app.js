@@ -40,7 +40,7 @@ function renderModal(mode = "signin") {
   const action = mode === "signup" ? "Criar conta" : "Entrar";
   const passwordHint = mode === "signup" ? '<small>Use pelo menos 8 caracteres.</small>' : "";
 
-  document.getElementById("mf").innerHTML = `<p class="q" id="auth-title">${title}</p><div class="social-auth"><button class="btn d" type="button" onclick="PCC.signInGoogle()">Continuar com Google</button></div><div class="auth-divider"><span>ou use o email</span></div><form onsubmit="return PCC.submitEmailAuth(event, '${mode}')">${nameField}<label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required maxlength="254" placeholder="nome@exemplo.com"><label for="auth-password">Palavra-passe</label><input id="auth-password" type="password" autocomplete="${mode === "signup" ? "new-password" : "current-password"}" minlength="8" required placeholder="Mínimo 8 caracteres">${passwordHint}<p class="er" id="auth-error" role="status" aria-live="polite"></p><button class="btn d" type="submit">${action}</button></form><p class="account-note">Ao criar conta, poderá guardar piscinas, moradas e histórico de serviços.</p>`;
+  document.getElementById("mf").innerHTML = `<p class="q" id="auth-title">${title}</p><div class="social-auth"><button class="btn d" type="button" onclick="PCC.signInGoogle()"><svg class="google-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.55-.2-2.27H12v4.51h6.44a5.5 5.5 0 0 1-2.38 3.61v3h3.86c2.25-2.08 3.57-5.14 3.57-8.85Z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.95-2.93l-3.86-3c-1.07.72-2.44 1.15-4.09 1.15-3.14 0-5.8-2.12-6.75-4.97H1.26v3.1A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.25 14.25a7.2 7.2 0 0 1 0-4.5v-3.1h-4A12 12 0 0 0 0 12c0 1.94.46 3.78 1.26 5.35l3.99-3.1Z"/><path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.82l3.43-3.43C17.95 1.2 15.24 0 12 0A12 12 0 0 0 1.26 6.65l3.99 3.1C6.2 6.9 8.86 4.77 12 4.77Z"/></svg><span>Continuar com Google</span></button></div><div class="auth-divider"><span>ou use o email</span></div><form onsubmit="return PCC.submitEmailAuth(event, '${mode}')">${nameField}<label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required maxlength="254" placeholder="nome@exemplo.com"><label for="auth-password">Palavra-passe</label><input id="auth-password" type="password" autocomplete="${mode === "signup" ? "new-password" : "current-password"}" minlength="8" required placeholder="Mínimo 8 caracteres">${passwordHint}<p class="er" id="auth-error" role="status" aria-live="polite"></p><button class="btn d" type="submit">${action}</button></form><p class="account-note">Ao criar conta, poderá guardar piscinas, moradas e histórico de serviços.</p>`;
   document.querySelector("#md [role=dialog]").setAttribute("aria-labelledby", "auth-title");
 }
 
@@ -156,9 +156,10 @@ window.cm = function closeAuth() {
 window.PCC = {
   async signInGoogle() {
     showError("");
+    const redirectTo = new URL("/", window.location.origin).href;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.href, skipBrowserRedirect: true },
+      options: { redirectTo, skipBrowserRedirect: true },
     });
     if (error || !data?.url) {
       showError("Não foi possível iniciar Google. Confirme se o provedor está ativo no Supabase.");
@@ -197,7 +198,7 @@ window.PCC = {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name }, emailRedirectTo: window.location.href },
+        options: { data: { full_name: name }, emailRedirectTo: new URL("/", window.location.origin).href },
       });
       if (error) showError(error.message);
       else if (!data.session) showError("Conta criada. Verifique o seu email para confirmar o endereço e entrar.");

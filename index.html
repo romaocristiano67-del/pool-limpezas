@@ -130,7 +130,8 @@ section{padding:84px 0}.hd{margin-bottom:36px}
 .x{position:absolute;right:10px;top:6px;background:none;border:0;font-size:26px;color:var(--mute);cursor:pointer}
 .tabs{display:flex;border-bottom:1px solid var(--line);margin:0 0 6px;padding-right:30px}.tabs[hidden]{display:none}.tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:12px 0;font:600 13px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);cursor:pointer}.tabs button.on{color:var(--ink);border-color:var(--blue)}
 .er{color:#d23b3b;font-size:13px;min-height:18px;margin:10px 0 0}.mb .btn{width:100%;margin-top:8px}.mb small{display:block;margin-top:12px;color:var(--mute);font-size:12px}
-.social-auth{display:grid;grid-template-columns:1fr 1fr;gap:8px}.social-auth .btn{padding:0 10px;font-size:11px;letter-spacing:.02em}.auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--mute);font-size:12px}.auth-divider::before,.auth-divider::after{content:"";height:1px;background:var(--line);flex:1}.mb form>.btn{margin-top:16px}.mb form>small{margin-top:6px}
+.social-auth{display:grid;grid-template-columns:1fr;justify-items:center;gap:8px}.social-auth .btn{width:min(100%,320px);padding:0 16px;font-size:12px;letter-spacing:.02em;display:inline-flex;align-items:center;justify-content:center;gap:12px}.social-auth .google-mark{width:20px;height:20px;flex:none}.auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--mute);font-size:12px}.auth-divider::before,.auth-divider::after{content:"";height:1px;background:var(--line);flex:1}.mb form>.btn{margin-top:16px}.mb form>small{margin-top:6px}
+.dark #date-error{color:var(--aq)}
 @media(max-width:380px){.brand b{display:none}}
 @media(min-width:800px){.sg{grid-template-columns:repeat(4,1fr);gap:16px}.sc{min-height:280px;padding:22px 20px 20px}.sc h3{font-size:24px}.sc p{font-size:14px}.sc svg{width:38px;height:38px}#auth{gap:18px}}
 
@@ -187,7 +188,7 @@ var S=[
 {id:"agua",n:"Tratamento de água",d:"Água verde, turva, pH e cloro."}];
 var tam={k:"Tamanho da piscina",q:"Qual o tamanho da piscina?",o:["Pequena (até 20 m²)","Média (20 a 50 m²)","Grande (mais de 50 m²)","Não sei"]};
 var loc={k:"Localização",q:"Onde fica? Indique o bairro ou município.",t:"x",o:["Talatona","Belas","Viana","Luanda Sul","Maianga","Ingombota","Outro"],ph:"Ex.: Benfica, Luanda"};
-var dia={k:"Dia",q:"Escolha a data da visita.",t:"d",o:["Escolher data"]};
+var dia={k:"Dia",q:"Escolha a data da visita.",t:"d",o:[]};
 var hor={k:"Horário",q:"E que horário?",o:["Manhã (8h às 12h)","Tarde (12h às 17h)","Tanto faz"]};
 var tipo={k:"Tipo",q:"Que tipo de piscina?",o:["Residencial","Condomínio","Hotel ou comercial"]};
 var F={
@@ -213,16 +214,22 @@ h+='<p class="q">Quase concluído. Os seus dados.</p><div class="sum">'+fl.slice
 '<label>Mais detalhes (opcional)</label><textarea id="ob" rows="3" placeholder="Algo que queira acrescentar">'+esc(A.obs||"")+'</textarea>'+
 '<button class="btn full" onclick="send()">Enviar pelo WhatsApp</button><div class="nav"><button class="lnk" onclick="back()">&larr; Voltar</button></div>';
 }else{
+if(s.t=="d"){
+h+='<p class="q">'+s.q+'</p><label for="dt">Data da visita</label><input id="dt" type="date" min="'+new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Luanda",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())+'" value="'+esc(A[s.k]||"")+'" aria-describedby="date-error"><p id="date-error" class="account-feedback" role="status" aria-live="polite"></p>';
+}else{
 h+='<p class="q">'+s.q+'</p><div class="opts">'+s.o.map(function(o){return '<button class="o'+(A[s.k]==o?' on':'')+'" onclick="ch('+JSON.stringify(o).replace(/"/g,"&quot;")+')">'+esc(o)+'</button>'}).join("")+'</div>';
+}
 if(s.t=="x")h+='<input id="tx" placeholder="'+s.ph+'" value="'+esc(A[s.k]||"")+'">';
-if(s.t=="d")h+='<input id="dt" type="date" min="'+new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Luanda",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())+'" onchange="ch(this.value)" style="display:none">';
-h+='<div class="nav"><button class="lnk" onclick="back()">&larr; '+(st?'Voltar':'Início')+'</button>'+(s.t=="x"?'<button class="btn d sm" onclick="txt()">Seguinte &rarr;</button>':'')+'</div>';
+h+='<div class="nav"><button class="lnk" onclick="back()">&larr; '+(st?'Voltar':'Início')+'</button>'+(s.t=="x"?'<button class="btn d sm" onclick="txt()">Seguinte &rarr;</button>':s.t=="d"?'<button class="btn d sm" onclick="dateNext()">Confirmar data &rarr;</button>':'')+'</div>';
 }
 W.innerHTML=h}
 function ch(o){var s=fl[st];
-if(s.t=="d"&&o=="Escolher data"){var d=document.getElementById("dt");d.style.display="block";if(d.showPicker)try{d.showPicker()}catch(e){}return}
 if(s.t=="x"&&o=="Outro"){document.getElementById("tx").focus();return}
 A[s.k]=o;st++;draw()}
+function dateNext(){var input=document.getElementById("dt"),value=input.value,error=document.getElementById("date-error");
+if(!value){error.textContent="Escolha uma data para continuar.";input.focus();return}
+if(value<input.min){error.textContent="A data da visita não pode estar no passado.";input.focus();return}
+A[fl[st].k]=value;st++;draw()}
 function txt(){var v=document.getElementById("tx").value.trim();if(!v){document.getElementById("tx").focus();return}A[fl[st].k]=v;st++;draw()}
 function back(){if(st==0)home();else{st--;draw()}}
 function send(){var n=document.getElementById("nm").value.trim();if(!n){document.getElementById("nm").focus();return}
